@@ -171,6 +171,7 @@ export class Tabletojson {
                 const cells = options.useFirstRowForHeadings
                     ? $(row).find('td, th')
                     : $(row).find('td');
+                let colSpanOffset = 0;
                 cells.each((cellIndex, cell) => {
                     if (options.ignoreHiddenRows) {
                         const style = $(row).attr('style');
@@ -191,12 +192,21 @@ export class Tabletojson {
                     const cheerioCellText = cheerioCell.text();
                     const cheerioCellHtml = cheerioCell.html();
                     const cheerioCellRowspan = cheerioCell.attr('rowspan');
+                    const cheerioCellColspan = cheerioCell.attr('colspan');
+                    const numCols = cheerioCellColspan ? parseInt(cheerioCellColspan, 10) - 1 : 0;
                     const content = options.stripHtmlFromCells
                         ? cheerioCellText.trim()
                         : cheerioCellHtml
                             ? cheerioCellHtml.trim()
                             : '';
-                    setColumn(adjustedIndex, content);
+                    const startAdjustedIndexOffset = adjustedIndex + colSpanOffset;
+                    setColumn(startAdjustedIndexOffset, content);
+                    if (numCols >= 1) {
+                        for (let c = 0; c < numCols; c++) {
+                            setColumn(startAdjustedIndexOffset + 1 + c, '');
+                            colSpanOffset++;
+                        }
+                    }
                     const value = cheerioCellRowspan ? parseInt(cheerioCellRowspan, 10) - 1 : 0;
                     if (value > 0)
                         nextrowspans[adjustedIndex] = { content, value };
