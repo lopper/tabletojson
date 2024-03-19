@@ -270,6 +270,8 @@ export class Tabletojson {
                     const cells: cheerio.Cheerio = options.useFirstRowForHeadings
                         ? $(row).find('td, th')
                         : $(row).find('td');
+
+                    let colSpanOffset: number = 0;
                     cells.each((cellIndex: number, cell: cheerio.Element) => {
                         // ignoreHiddenRows
                         if (options.ignoreHiddenRows) {
@@ -295,15 +297,22 @@ export class Tabletojson {
                         const cheerioCellText: string = cheerioCell.text();
                         const cheerioCellHtml: string | null = cheerioCell.html();
                         const cheerioCellRowspan: string | undefined = cheerioCell.attr('rowspan');
+                        const cheerioCellColspan = cheerioCell.attr('colspan');
+                        const numCols: number = cheerioCellColspan ? parseInt(cheerioCellColspan, 10) - 1 : 0;
 
                         const content: string = options.stripHtmlFromCells
                             ? cheerioCellText.trim()
                             : cheerioCellHtml
                               ? cheerioCellHtml.trim()
                               : '';
-
-                        setColumn(adjustedIndex, content);
-
+                        const startAdjustedIndexOffset: number = adjustedIndex + colSpanOffset;
+                        setColumn(startAdjustedIndexOffset, content);
+                        if (numCols >= 1) {
+                            for (let c = 0; c < numCols; c++) {
+                                setColumn(startAdjustedIndexOffset + 1 + c, '');
+                                colSpanOffset++;
+                            }
+                        }
                         // Check rowspan
                         const value: number = cheerioCellRowspan ? parseInt(cheerioCellRowspan, 10) - 1 : 0;
                         if (value > 0) nextrowspans[adjustedIndex] = {content, value};
